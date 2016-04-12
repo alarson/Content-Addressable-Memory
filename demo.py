@@ -4,6 +4,9 @@
 #4/12/2016
 import network
 def main():
-	a = network.Hopfield_Network(2)
+	a = network.Hopfield_Network(5)
+	a.store([1,1,1,1,1])
+	a.store([1,-1,-1,1,-1])
+	a.store([-1,1,-1,-1,-1])
 	print a
 main()
