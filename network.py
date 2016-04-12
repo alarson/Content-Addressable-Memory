@@ -4,7 +4,7 @@
 #4/12/2016
 
 import numpy as np
-
+import random as rand
 class Hopfield_Network(object):
 	'''
 	Meant to serve as a model of the hopefield associative memory
@@ -68,13 +68,24 @@ class Hopfield_Network(object):
 		Dr. Snapp in the class notes: http://www.cems.uvm.edu/~rsnapp/teaching/cs256/index.html
 		'''
 		self.state_vector = probe
-		while(self.update_synch(self)):
-			print self.state_vector
+		for i in range(10):
+			self.update_asynch()
+		print self.state_vector
 
 	def update_asynch(self):
 		'''
-		One timestep in the network update process, when the network is updated asynchronously
+		One timestep in the network update process, when the network is updated asynchronously.
+		In the asycnhronous scheme, a node is selected for update at random.
 		'''
+		#select random node for update
+		node = rand.randint(0,self.n-1)
+
+		#sum inputs, and take the sign of the resulting integer
+		node_sum = (np.transpose(self.weights[node])*self.state_vector).sum()
+		node_sign = node_sum/abs(node_sum)
+
+		#update
+		self.state_vector[node]=node_sign
 
 	def update_synch(self):
 		'''
