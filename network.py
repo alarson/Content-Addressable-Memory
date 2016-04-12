@@ -60,7 +60,19 @@ class Hopfield_Network(object):
 		else:
 			print "attempted to sum outer products of unpopulated memory set"
 
-	def retrieve(self, probe):
+	def retrieve_synch(self, probe):
+		'''
+		The passed (generally perturbed) memory is used to initialize the state of the network, and should be a mildly permuted version of the memory
+		that should be retrieved. This function then starts the update() cycle, and ends when the network reaches a stable state.
+		The network will not fall into a periodic or chaotic attractor thanks to the entropy rules as described and demonstrated by
+		Dr. Snapp in the class notes: http://www.cems.uvm.edu/~rsnapp/teaching/cs256/index.html
+		'''
+		self.state_vector = probe
+		for i in range(10):
+			self.update_synch()
+			print self.state_vector
+
+	def retrieve_asynch(self, probe):
 		'''
 		The passed (generally perturbed) memory is used to initialize the state of the network, and should be a mildly permuted version of the memory
 		that should be retrieved. This function then starts the update() cycle, and ends when the network reaches a stable state.
@@ -70,7 +82,7 @@ class Hopfield_Network(object):
 		self.state_vector = probe
 		for i in range(10):
 			self.update_asynch()
-		print self.state_vector
+			print self.state_vector
 
 	def update_asynch(self):
 		'''
@@ -82,13 +94,17 @@ class Hopfield_Network(object):
 
 		#sum inputs, and take the sign of the resulting integer
 		node_sum = (np.transpose(self.weights[node])*self.state_vector).sum()
-		node_sign = node_sum/abs(node_sum)
+		node_sign = int(np.sign(node_sum))
+		if(node_sign == 0):
+			node_sign = 1
 
 		#update
 		self.state_vector[node]=node_sign
 
 	def update_synch(self):
 		'''
-		One timestep in the network update process, when the network is updated synchronously
+		One timestep in the network update process, when the network is updated synchronously.
 		'''
-		#for index in network_state:
+		Tx = np.sign(self.state_vector*self.weights)
+		Tx[Tx == 0] = 1
+		self.state_vector = Tx
