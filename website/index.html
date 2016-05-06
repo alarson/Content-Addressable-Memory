@@ -1,0 +1,35 @@
+<DOCTYPE>
+
+<html>
+<head>
+    <script src="math.js" type="text/javascript"></script>
+    <script type="text/javascript" src="numeric-1.2.6.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.0/jquery.min.js"></script>
+    <script type="text/javascript" src="net_functions.js"></script>
+    <script type="text/javascript" src="draw.js"></script>
+    <script type="text/javascript" src="reference.js"></script>
+	<link rel="stylesheet" href="style.css" type="text/css" media="screen" />
+</head>
+<body> 
+	<div id="drawing-table"></div>
+<!--    left/right cycle control-->
+    <div>
+        <button onclick="cycle(0)">L</button>
+        <button onclick="cycle(1)">R</button>
+    </div>
+	<table id="palette">
+        <td style="background-color: white; border: 1px solid #ddd;" onclick="redips.setColor(this)"></td>
+        <td style= "background-color: black" onclick="redips.setColor(this)"></td>
+	</table>
+    <p id="coordinates"></p>
+    <p id="network"></p>
+    <p id="weights"></p>
+<button onclick="clear_pallette()">Clear</button>
+<button onclick="store()">Add Pattern</button>
+<button onclick="probe_synch()">Probe</button>
+<button onclick="test_function()">testing</button>
+
+    </body>
+
+</html>
+
