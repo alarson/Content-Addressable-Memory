@@ -4,9 +4,8 @@
 #4/12/2016
 import network
 def main():
-	a = network.Hopfield_Network(10)
-	a.store([1,1,1,1,1,1,1,1,1,1])
-	a.store([-1,-1,-1,-1,-1,1,1,1,1,1])
-	
-	a.retrieve_asynch([-1,-1,-1,1,-1,1,1,1,1,1])
+	a = network.Hopfield_Network(15)
+	# a.store([1,1,1,1,1,1,1,1,1,1])
+	a.store([-1,-1,-1,-1,-1,1,1,1,1,1,-1,-1,-1,-1,-1])
+	a.retrieve_partial_reverse([1,-1,-1,-1,1,1,1,1,1,-1,-1,-1,-1,-1,-1])
 main()
