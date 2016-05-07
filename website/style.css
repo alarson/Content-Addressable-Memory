@@ -1,5 +1,8 @@
 /*
+Ari Larson
+5/6/2016
 
+Some elements taken from:
 Darko Bunic
 http://www.redips.net/
 May, 2015.
@@ -16,6 +19,7 @@ div#drawing-table table td {
 	height: 4px;
 	padding: 3px;
 	border: 1px solid #fafafa;
+    align-content: center;
 }
 
 table#palette {
