@@ -90,13 +90,14 @@ class Hopfield_Network(object):
 			time_series.append(self.state_vector[:])
 		return time_series
 
-	def update_asynch(self):
+	def update_asynch(self,node = -1):
 		'''
 		One timestep in the network update process, when the network is updated asynchronously.
 		In the asycnhronous scheme, a node is selected for update at random.
 		'''
-		#select random node for update
-		node = rand.randint(0,self.n-1)
+		#select random node for update, if not specified
+		if(node==-1):
+			node = rand.randint(0,self.n-1)
 
 		#sum inputs, and take the sign of the resulting integer
 		node_sum = (np.transpose(self.weights[node])*self.state_vector).sum()
@@ -114,4 +115,70 @@ class Hopfield_Network(object):
 
 		Tx = [np.sign(i) for i in (self.state_vector*self.weights).tolist()[0]]
 		Tx[Tx == 0] = 1
-		self.state_vector = Tx
+		self.state_vector = np.array(Tx)[0]
+
+	def retrieve_partial_reverse(self, probe):
+		'''
+		Utilizes update scheme described in Morita 1992 "Associative Memory with Nonmonotone Dynamics". The network alternates between traditional update
+		scheme using conventional dynamics (phase I) and an update to reduce probability of reaching spurious attractors interfering with search (phase II)
+		'''
+		#arbitrary paremeters h and lam(bda) are described in the paper. When internet available, look up constants in py
+		h = 1.9
+		lam = 2.7
+		self.state_vector = probe
+		print self.state_vector
+		print self.n
+		# test = 0
+		for i in range(10):
+
+			#Phase I:
+			# for i in range(self.n):
+			self.update_synch()
+			print self.state_vector
+			#Phase II:
+			#this is an attempt to interpret tthe explicit version.
+			for i in range(self.n):
+				v_i=0
+				for j in range(self.n):
+					u_j = (np.transpose(self.weights[j])*self.state_vector).sum()
+					# print u_j
+					v_i += (self.weights[i,j]*self.phi(u_j))			
+				u_i = (np.transpose(self.weights[i])*self.state_vector).sum()
+				
+				
+				# test+=self.weights[i,j]*self.state_vector[j]
+				self.state_vector[i]=int(np.sign(u_i - lam*v_i))
+				# if self.state_vector[i]==0:
+				# 	self.state_vector[i]=1
+			print self.state_vector
+		# print test
+		
+			#this is an attempt to interpret his "abbreviated" version
+			# for i in range(self.n):
+			# 	# influence = self.weights*(self.state_vector - lam*[self.phi(j) for j in np.transpose(self.weights[i])*self.state_vector])
+				
+			# 	influence = np.transpose(self.weights[i])*self.state_vector
+			# 	# print influence
+			# 	# print influence[1,1]
+			# 	for i in range(self.n):
+			# 		for j in range(self.n):
+			# 			influence[i,j]=self.phi(influence.item((i,j)))
+			# 	x_t_1 = self.weights[i]*(self.state_vector -lam*influence)
+			# 	self.state_vector[i]=int(np.sign(x_t_1.sum()))
+			# 	if self.state_vector[i]==0:
+			# 		# print "uh oh"
+			# 		self.state_vector[i]=1
+			# 	print self.state_vector
+	
+	#should make static I think
+	def phi(self,u):
+		#arbitrary paremeters h and lam(bda) are described in the paper
+		h = 1.9
+		lam = 2.7
+		
+		if (u<(h*-1)):
+			return -1
+		elif(((-1)*h<=u) and (u<=h)):
+			return 0
+		else: #u>h
+			return 1
