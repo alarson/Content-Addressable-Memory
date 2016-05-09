@@ -11,33 +11,34 @@ import matplotlib.pyplot as plt
 
 def main():
 	#How many simulations (unique nets) should be run:
-	sims = 20
+	sims = 5
 	#general parameters
-	n=100
-	num_overlap_levels = 20
+	n=50
+	num_overlap_levels = 10
 
 	if(n<num_overlap_levels):
 		print "Be better."
 		exit()
 
-	num_trials=25
-	time_limit = 10
+	num_trials=1
+	time_limit = 20
 	r = .025 #r is the ratio of memories to neurons m:n
 
 	synch=True #if false, use async update scheme.
+	part_reverse=True;
 	tolerance = 0.025 #ratio of bits that can be incorrect allowing the network to be considered correct
 	num_tol=int(tolerance*n)
 	print num_tol
 
-	for r in range(25,275,25):
+	for r in range(150,275,25):
 		r*=0.001
 		#Here we run the simulation sims times
 		tally=[]
-		tally,tally_total,tally_perfect,tally_25,tally_5 = (simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,num_tol))
+		tally,tally_total,tally_perfect,tally_25,tally_5 = (simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,part_reverse,num_tol))
 		tally_total=0
 		tally_perfect=0
 		for i in range(sims-1):
-			new,tot,perf,t25,t5 = (simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,num_tol))
+			new,tot,perf,t25,t5 = (simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,part_reverse,num_tol))
 
 			tally_total+=tot
 			tally_perfect+=perf
@@ -60,7 +61,7 @@ def main():
 		print "total end states within 0.05 error:"+str(tally_5)+"\n"
 		graph(tally,n,r)
 
-def simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,tolerance):
+def simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,part_reverse,tolerance):
 	'''
 	For one simulation, a single nxn network is generated. Each index of the o_levels list contains itself a list of length num_trials. Each index of this list contains a 
 	single "trial", which is a list corresponding to the overlap values over time when the network is exposed to a randomized permutation of the target memory, with the appropriate
@@ -80,6 +81,7 @@ def simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,tolerance):
 	for i in range(m):
 		memories.append(generate_memory(n))
 		net.store(memories[i])
+	print compare(memories[0],memories[1])
 
 	#now, we run trials on this network.
 	tally_perfect=0
@@ -93,13 +95,16 @@ def simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,tolerance):
 			#run trial
 			mem = memories[random.choice(range(m))]
 			# print compare(permute(mem,p),mem)
-			if(synch):
-				states = net.retrieve_synch(permute(mem,p),time_limit)
+			if(part_reverse):
+				states = net.retrieve_partial_reverse(permute(mem,p),time_limit,r)
 			else:
-				states = net.retrieve_asynch(permute(mem,p),time_limit)
+				if(synch):
+					states = net.retrieve_synch(permute(mem,p),time_limit)
+				else:
+					states = net.retrieve_asynch(permute(mem,p),time_limit)
 			#compare to original memory at each timestep
 			overlaps = []
-			for t in range(time_limit):
+			for t in range(len(states)):
 				comparison = compare(states[t], mem)
 				overlaps.append(comparison)
 				if(n-comparison==0):

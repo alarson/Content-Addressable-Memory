@@ -5,6 +5,7 @@
 
 import numpy as np
 import random as rand
+import math
 class Hopfield_Network(object):
 	'''
 	Meant to serve as a model of the hopefield associative memory
@@ -34,6 +35,7 @@ class Hopfield_Network(object):
 		self.num_memories += 1
 		#self.sum_outer_products() inefficient
 		self.weights += np.transpose(np.matrix(memory))*np.matrix(memory) - np.identity(self.n)
+
 
 	def remove(self, memory):
 		'''
@@ -115,70 +117,98 @@ class Hopfield_Network(object):
 
 		Tx = [np.sign(i) for i in (self.state_vector*self.weights).tolist()[0]]
 		Tx[Tx == 0] = 1
-		self.state_vector = np.array(Tx)[0]
+		self.state_vector = np.array(Tx)
 
-	def retrieve_partial_reverse(self, probe):
+	def retrieve_partial_reverse(self, probe,t,r):
 		'''
 		Utilizes update scheme described in Morita 1992 "Associative Memory with Nonmonotone Dynamics". The network alternates between traditional update
 		scheme using conventional dynamics (phase I) and an update to reduce probability of reaching spurious attractors interfering with search (phase II)
+		TODO: optimize
 		'''
 		#arbitrary paremeters h and lam(bda) are described in the paper. When internet available, look up constants in py
+		# h = 1+2.0*math.sqrt(r)
 		h = 1.9
+		print "h"+str(h)
 		lam = 2.7
 		self.state_vector = probe
-		print self.state_vector
-		print self.n
+		time_series = []
 		# test = 0
-		for i in range(10):
+		time_series.append(self.state_vector[:])
+		for i in range(t/2):
 
 			#Phase I:
 			# for i in range(self.n):
-			self.update_synch()
-			print self.state_vector
+			# self.update_synch()
+			
+			# print self.state_vector
 			#Phase II:
-			#this is an attempt to interpret tthe explicit version.
+
+			# #this is an attempt to interpret his "explicit" version
+			# #THIS WORKS... Kind of
+			
+			# u = [i for i in (self.state_vector*self.weights).tolist()[0]]
+			# v = [self.phi(i) for i in (self.state_vector*self.weights).tolist()[0]]
+
+			# for j in range(len(v)):
+			# 	v[j]  = v[j]*lam
+
+			# self.state_vector = np.array([np.sign(a_i - b_i) for a_i, b_i in zip(u, v)])
+			# time_series.append(self.state_vector[:])
+
+			#Phase II:
+			#this is an attempt to interpret his "explicit" version iteratively
+			#phase I
+			np.set_printoptions(threshold=np.inf)
+			u = [0]*self.n
+			v = [0]*self.n
 			for i in range(self.n):
-				v_i=0
 				for j in range(self.n):
-					u_j = (np.transpose(self.weights[j])*self.state_vector).sum()
-					# print u_j
-					v_i += (self.weights[i,j]*self.phi(u_j))			
-				u_i = (np.transpose(self.weights[i])*self.state_vector).sum()
-				
-				
-				# test+=self.weights[i,j]*self.state_vector[j]
-				self.state_vector[i]=int(np.sign(u_i - lam*v_i))
-				# if self.state_vector[i]==0:
-				# 	self.state_vector[i]=1
-			print self.state_vector
-		# print test
-		
+					u[i]+=self.weights[i,j]*self.state_vector[j]
+			
+			for i in range(self.n):
+				self.state_vector[i]=np.sign(u[i])
+			# time_series.append(self.state_vector[:])
+			#phase II
+			for i in range(self.n):
+				for j in range(self.n):
+					u[i]+=self.weights[i,j]*self.state_vector[j]
+			for i in range(self.n):
+				for j in range(self.n):
+
+					v[i]+=self.weights[i,j]*self.phi(u[j])
+
+			# print u
+			# print v
+			for i in range(self.n):
+				# print u[i]-lam*v[i]
+				if(not( (float(u[i])/v[i] ) >0 and (float(u[i])/v[i]) < lam)):
+					# print "true"
+					self.state_vector[i]=self.state_vector[i]*-1
+				# else:
+					# print "false"
+				# self.state_vector[i]=np.sign(u[i]-lam*v[i])
+				# print u[i]/v[i]
+
+			#Phase II:
 			#this is an attempt to interpret his "abbreviated" version
-			# for i in range(self.n):
-			# 	# influence = self.weights*(self.state_vector - lam*[self.phi(j) for j in np.transpose(self.weights[i])*self.state_vector])
-				
-			# 	influence = np.transpose(self.weights[i])*self.state_vector
-			# 	# print influence
-			# 	# print influence[1,1]
-			# 	for i in range(self.n):
-			# 		for j in range(self.n):
-			# 			influence[i,j]=self.phi(influence.item((i,j)))
-			# 	x_t_1 = self.weights[i]*(self.state_vector -lam*influence)
-			# 	self.state_vector[i]=int(np.sign(x_t_1.sum()))
-			# 	if self.state_vector[i]==0:
-			# 		# print "uh oh"
-			# 		self.state_vector[i]=1
-			# 	print self.state_vector
-	
+			# temp = np.array((self.mult_state(self.weights,(self.state_vector-[lam*i for i in [self.phi(i) for i in (self.mult_state(self.weights,self.state_vector))]]))))
+			# self.state_vector = np.array([np.sign(i) for i in temp])
+			# time_series.append(self.state_vector[:])
+
+			time_series.append(self.state_vector[:])
+		return time_series
 	#should make static I think
 	def phi(self,u):
 		#arbitrary paremeters h and lam(bda) are described in the paper
 		h = 1.9
 		lam = 2.7
-		
-		if (u<(h*-1)):
-			return -1
-		elif(((-1)*h<=u) and (u<=h)):
+		# print u
+		if(abs(u)>h):
+			return np.sign(u)
+		else:
 			return 0
-		else: #u>h
-			return 1
+
+	def mult_state(self,weights,state):
+		tstate = [[i] for i in state]
+		# print np.shape(tstate)
+		return [i.tolist()[0][0] for i in weights*[[i] for i in state]]
