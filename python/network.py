@@ -60,7 +60,7 @@ class Hopfield_Network(object):
 		else:
 			print "attempted to sum outer products of unpopulated memory set"
 
-	def retrieve_synch(self, probe):
+	def retrieve_synch(self, probe,t):
 		'''
 		The passed (generally perturbed) memory is used to initialize the state of the network, and should be a mildly permuted version of the memory
 		that should be retrieved. This function then starts the update() cycle, and ends when the network reaches a stable state.
@@ -68,11 +68,14 @@ class Hopfield_Network(object):
 		Dr. Snapp in the class notes: http://www.cems.uvm.edu/~rsnapp/teaching/cs256/index.html
 		'''
 		self.state_vector = probe
-		for i in range(10):
+		time_series = []
+		time_series.append(probe)
+		for i in range(t):
 			self.update_synch()
-			print self.state_vector
+			time_series.append(self.state_vector[:])
+		return time_series
 
-	def retrieve_asynch(self, probe):
+	def retrieve_asynch(self, probe,t):
 		'''
 		The passed (generally perturbed) memory is used to initialize the state of the network, and should be a mildly permuted version of the memory
 		that should be retrieved. This function then starts the update() cycle, and ends when the network reaches a stable state.
@@ -80,9 +83,12 @@ class Hopfield_Network(object):
 		Dr. Snapp in the class notes: http://www.cems.uvm.edu/~rsnapp/teaching/cs256/index.html
 		'''
 		self.state_vector = probe
-		for i in range(10):
+		time_series = []
+		time_series.append(probe)
+		for i in range(t):
 			self.update_asynch()
-			print self.state_vector
+			time_series.append(self.state_vector[:])
+		return time_series
 
 	def update_asynch(self):
 		'''
@@ -105,6 +111,7 @@ class Hopfield_Network(object):
 		'''
 		One timestep in the network update process, when the network is updated synchronously.
 		'''
-		Tx = np.sign(self.state_vector*self.weights)
+
+		Tx = [np.sign(i) for i in (self.state_vector*self.weights).tolist()[0]]
 		Tx[Tx == 0] = 1
 		self.state_vector = Tx
