@@ -127,6 +127,7 @@ class Hopfield_Network(object):
 		'''
 		#arbitrary paremeters h and lam(bda) are described in the paper. When internet available, look up constants in py
 		# h = 1+2.0*math.sqrt(r)
+
 		h = 1.9
 		print "h"+str(h)
 		lam = 2.7
@@ -158,36 +159,39 @@ class Hopfield_Network(object):
 			#Phase II:
 			#this is an attempt to interpret his "explicit" version iteratively
 			#phase I
-			np.set_printoptions(threshold=np.inf)
 			u = [0]*self.n
 			v = [0]*self.n
 			for i in range(self.n):
 				for j in range(self.n):
 					u[i]+=self.weights[i,j]*self.state_vector[j]
-			
+
+				# u[i]/=j
 			for i in range(self.n):
 				self.state_vector[i]=np.sign(u[i])
 			# time_series.append(self.state_vector[:])
 			#phase II
-			for i in range(self.n):
-				for j in range(self.n):
-					u[i]+=self.weights[i,j]*self.state_vector[j]
+			# for i in range(self.n):
+			# 	for j in range(self.n):
+			# 		u[i]+=self.weights[i,j]*self.state_vector[j]
+				# u[i]/=j
 			for i in range(self.n):
 				for j in range(self.n):
 
 					v[i]+=self.weights[i,j]*self.phi(u[j])
 
-			# print u
+			print u
 			# print v
 			for i in range(self.n):
 				# print u[i]-lam*v[i]
-				if(not( (float(u[i])/v[i] ) >0 and (float(u[i])/v[i]) < lam)):
-					# print "true"
-					self.state_vector[i]=self.state_vector[i]*-1
+				# if(( (float(u[i])/v[i] ) >0 and (float(u[i])/v[i]) < lam)):
+				# 	# print "true"
+				# 	self.state_vector[i]=self.state_vector[i]*-1
 				# else:
 					# print "false"
-				# self.state_vector[i]=np.sign(u[i]-lam*v[i])
-				# print u[i]/v[i]
+				print u[i]-lam*v[i]
+				self.state_vector[i]=np.sign(u[i]-lam*v[i])
+				# if(v[i]!=0 and float(u[i])/v[i]<lam and float(u[i])/v[i]>0):
+				# 	self.state_vector[i]*=-1
 
 			#Phase II:
 			#this is an attempt to interpret his "abbreviated" version
@@ -212,3 +216,7 @@ class Hopfield_Network(object):
 		tstate = [[i] for i in state]
 		# print np.shape(tstate)
 		return [i.tolist()[0][0] for i in weights*[[i] for i in state]]
+	def normalize_net(self):
+		for i in range(len(self.weights)):
+			for j in range(len(self.weights[i])):
+				self.weights[i,j]/=self.n

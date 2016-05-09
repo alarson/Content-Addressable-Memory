@@ -11,10 +11,10 @@ import matplotlib.pyplot as plt
 
 def main():
 	#How many simulations (unique nets) should be run:
-	sims = 5
+	sims = 1
 	#general parameters
-	n=50
-	num_overlap_levels = 10
+	n=100
+	num_overlap_levels = 5
 
 	if(n<num_overlap_levels):
 		print "Be better."
@@ -30,7 +30,7 @@ def main():
 	num_tol=int(tolerance*n)
 	print num_tol
 
-	for r in range(150,275,25):
+	for r in range(25,275,25):
 		r*=0.001
 		#Here we run the simulation sims times
 		tally=[]
@@ -68,7 +68,7 @@ def simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,part_reverse,tol
 	overlap level as dictated by its location in the o_levels list. Cool.
 	'''
 	
-	p_references = np.arange(0, n+1, n/num_overlap_levels) #just for keeping track of which indexes of o_levels are for which overlap percentages
+	p_references = np.arange(n/2, n+1, n/num_overlap_levels) #just for keeping track of which indexes of o_levels are for which overlap percentages
 	#o_levels is a list. Each index has a set of trials conducted for that initial overlap level, which is a "trials" list. Each trials list contains time-series lists
 	#containing integers corresponding to how many indexes of the memory are correct.
 	o_levels=[]
@@ -82,7 +82,7 @@ def simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,part_reverse,tol
 		memories.append(generate_memory(n))
 		net.store(memories[i])
 	print compare(memories[0],memories[1])
-
+	net.normalize_net()
 	#now, we run trials on this network.
 	tally_perfect=0
 	total=0
