@@ -8,13 +8,14 @@ import random
 import matplotlib
 matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
+import pickle
 
 def main():
 	#How many simulations (unique nets) should be run:
-	sims = 20
+	sims = 10
 	#general parameters
 	n=100
-	num_overlap_levels = 20
+	num_overlap_levels = 1
 
 	if(n<num_overlap_levels):
 		print "Be better."
@@ -29,36 +30,55 @@ def main():
 	num_tol=int(tolerance*n)
 	print num_tol
 
-	for r in range(25,275,25):
-		r*=0.001
-		#Here we run the simulation sims times
-		tally=[]
-		tally,tally_total,tally_perfect,tally_25,tally_5 = (simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,num_tol))
-		tally_total=0
-		tally_perfect=0
-		for i in range(sims-1):
-			new,tot,perf,t25,t5 = (simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,num_tol))
+	#this experiment tests the ratio of m:n, r_matrix indices correspond to 
+	r_matrix_perfect = []
+	r_matrix_025 = []
+	r_matrix_05 = []
+	for m in range(1,25):
+		row_perf = []
+		row_25 = []
+		row_05 = []
+			
+		for n in range(5,225,5):
+			r = float(m)/n
 
-			tally_total+=tot
-			tally_perfect+=perf
-			tally_25+=t25
-			tally_5+=t5
-			#runs contains a tally, we update it using new
+			#Here we run the simulation sims times
+			tally=[]
+			tally,tally_total,tally_perfect,tally_25,tally_5 = (simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,num_tol))
+			tally_total=0
+			tally_perfect=0
+			for i in range(sims-1):
+				new,tot,perf,t25,t5 = (simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,num_tol))
 
-			for j in range(len(tally)):
-				tally[j]= [sum(x) for x in zip(tally[j], new[j])]
-			# print "run "+str(i+1)+" complete."
-		
-		#we normalize runs back down from tally to average
-		for i in range(len(tally)):
-			for j in range(len(tally[i])):
-				tally[i][j]= tally[i][j]/sims
+				tally_total+=tot
+				tally_perfect+=perf
+				tally_25+=t25
+				tally_5+=t5
+				#runs contains a tally, we update it using new
 
-		print "r = "+str(r)+", total end states evaluated: "+str(tally_total)
-		print "total perfect end states:"+str(tally_perfect)+"\n"
-		print "total end states within 0.0025 error:"+str(tally_25)+"\n"
-		print "total end states within 0.05 error:"+str(tally_5)+"\n"
-		graph(tally,n,r)
+				for j in range(len(tally)):
+					tally[j]= [sum(x) for x in zip(tally[j], new[j])]
+				# print "run "+str(i+1)+" complete."
+			
+			#we normalize runs back down from tally to average
+			for i in range(len(tally)):
+				for j in range(len(tally[i])):
+					tally[i][j]= tally[i][j]/sims
+			row_perf.append(float(tally_perfect)/tally_total)
+			row_25.append(float(tally_25)/tally_total)
+			row_05.append(float(tally_5)/tally_total)
+		r_matrix_perfect.append(row_perf)
+		r_matrix_025.append(row_25)
+		r_matrix_05.append(row_05)
+		print m
+	pickle.dump( r_matrix_perfect, open( "r_perf.pickle", "wb" ) )
+	pickle.dump( r_matrix_025, open( "r_025.pickle", "wb" ) )
+	pickle.dump( r_matrix_05, open( "r_05.pickle", "wb" ) )
+	# print "r = "+str(r)+", total end states evaluated: "+str(tally_total)
+	# print "total perfect end states:"+str(tally_perfect)+"\n"
+	# print "total end states within 0.0025 error:"+str(tally_25)+"\n"
+	# print "total end states within 0.05 error:"+str(tally_5)+"\n"
+	# graph(tally,n,r)
 
 def simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,tolerance):
 	'''
@@ -68,6 +88,7 @@ def simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,tolerance):
 	'''
 	
 	p_references = np.arange(0, n+1, n/num_overlap_levels) #just for keeping track of which indexes of o_levels are for which overlap percentages
+	p_references=[int(n*0.2)]
 	#o_levels is a list. Each index has a set of trials conducted for that initial overlap level, which is a "trials" list. Each trials list contains time-series lists
 	#containing integers corresponding to how many indexes of the memory are correct.
 	o_levels=[]
