@@ -25,33 +25,40 @@ def main():
 	r = .025 #r is the ratio of memories to neurons m:n
 
 	synch=True #if false, use async update scheme.
-	tolerance = 0 #ratio of bits that can be incorrect allowing the network to be considered correct
+	tolerance = 0.025 #ratio of bits that can be incorrect allowing the network to be considered correct
 	num_tol=int(tolerance*n)
+	print num_tol
 
-	#Here we run the simulation sims times
-	tally=[]
-	tally,tally_total,tally_perfect = (simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,num_tol))
-	tally_total=0
-	tally_perfect=0
-	for i in range(sims-1):
-		new,tot,perf = (simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,num_tol))
+	for r in range(25,275,25):
+		r*=0.001
+		#Here we run the simulation sims times
+		tally=[]
+		tally,tally_total,tally_perfect,tally_25,tally_5 = (simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,num_tol))
+		tally_total=0
+		tally_perfect=0
+		for i in range(sims-1):
+			new,tot,perf,t25,t5 = (simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,num_tol))
 
-		tally_total+=tot
-		tally_perfect+=perf
-		#runs contains a tally, we update it using new
+			tally_total+=tot
+			tally_perfect+=perf
+			tally_25+=t25
+			tally_5+=t5
+			#runs contains a tally, we update it using new
 
-		for j in range(len(tally)):
-			tally[j]= [sum(x) for x in zip(tally[j], new[j])]
-		print "run "+str(i+1)+" complete."
-	
-	#we normalize runs back down from tally to average
-	for i in range(len(tally)):
-		for j in range(len(tally[i])):
-			tally[i][j]= tally[i][j]/sims
+			for j in range(len(tally)):
+				tally[j]= [sum(x) for x in zip(tally[j], new[j])]
+			# print "run "+str(i+1)+" complete."
+		
+		#we normalize runs back down from tally to average
+		for i in range(len(tally)):
+			for j in range(len(tally[i])):
+				tally[i][j]= tally[i][j]/sims
 
-	print "total end states evaluated: "+str(tally_total)
-	print "total perfect end states:"+str(tally_perfect)
-	graph(tally,n)
+		print "r = "+str(r)+", total end states evaluated: "+str(tally_total)
+		print "total perfect end states:"+str(tally_perfect)+"\n"
+		print "total end states within 0.0025 error:"+str(tally_25)+"\n"
+		print "total end states within 0.05 error:"+str(tally_5)+"\n"
+		graph(tally,n,r)
 
 def simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,tolerance):
 	'''
@@ -77,6 +84,8 @@ def simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,tolerance):
 	#now, we run trials on this network.
 	tally_perfect=0
 	total=0
+	t25=0
+	t5=0
 	for p in p_references:
 		trials= []
 		for trial in range(num_trials):
@@ -93,8 +102,12 @@ def simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,tolerance):
 			for t in range(time_limit):
 				comparison = compare(states[t], mem)
 				overlaps.append(comparison)
-				if(n-comparison<=tolerance):
+				if(n-comparison==0):
 					tally_perfect+=1
+				elif(n-comparison<tolerance):
+					t25+=1
+				elif(n-comparison<2*tolerance):
+					t5+=1
 				total+=1
 				
 			#store resulting overlap time-series
@@ -106,9 +119,9 @@ def simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,tolerance):
 		# print len(trials)
 		o_levels.append(average(trials))
 
-	return (o_levels,total,tally_perfect)
+	return (o_levels,total,tally_perfect,t25,t5)
 
-def graph(series,n):
+def graph(series,n,param):
 	fig, ax = plt.subplots()
 	ax.margins(0.04)
 
@@ -126,8 +139,8 @@ def graph(series,n):
 	plt.title("Time courses for overlap")
 	# plt.figure(facecolor="white")
 	fig1 = plt.gcf()
-	fig1.savefig('out.png')
-	plt.show()
+	fig1.savefig('r_'+str(param)+'.png')
+	# plt.show()
 
 def compare(ar1,ar2):
 	'''
