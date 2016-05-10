@@ -34,7 +34,8 @@ class Hopfield_Network(object):
 		self.memories.append(np.matrix(memory))
 		self.num_memories += 1
 		#self.sum_outer_products() inefficient
-		self.weights += np.transpose(np.matrix(memory))*np.matrix(memory) - np.identity(self.n)
+		self.weights = self.weights + np.outer(memory,memory) - np.identity(self.n)
+		# self.weights += np.transpose(np.matrix(memory))*np.matrix(memory) - np.identity(self.n)
 
 
 	def remove(self, memory):
@@ -115,7 +116,7 @@ class Hopfield_Network(object):
 		One timestep in the network update process, when the network is updated synchronously.
 		'''
 
-		Tx = [np.sign(i) for i in (self.state_vector*self.weights).tolist()[0]]
+		Tx = [np.sign(i) for i in self.mult_state(self.weights,self.state_vector)]
 		Tx[Tx == 0] = 1
 		self.state_vector = np.array(Tx)
 
@@ -129,7 +130,7 @@ class Hopfield_Network(object):
 		# h = 1+2.0*math.sqrt(r)
 
 		h = 1.9
-		print "h"+str(h)
+		# print "h"+str(h)
 		lam = 2.7
 		self.state_vector = probe
 		time_series = []
@@ -137,67 +138,38 @@ class Hopfield_Network(object):
 		time_series.append(self.state_vector[:])
 		for i in range(t/2):
 
-			#Phase I:
-			# for i in range(self.n):
-			# self.update_synch()
-			
-			# print self.state_vector
-			#Phase II:
-
-			# #this is an attempt to interpret his "explicit" version
-			# #THIS WORKS... Kind of
-			
-			# u = [i for i in (self.state_vector*self.weights).tolist()[0]]
-			# v = [self.phi(i) for i in (self.state_vector*self.weights).tolist()[0]]
-
-			# for j in range(len(v)):
-			# 	v[j]  = v[j]*lam
-
-			# self.state_vector = np.array([np.sign(a_i - b_i) for a_i, b_i in zip(u, v)])
-			# time_series.append(self.state_vector[:])
-
-			#Phase II:
 			#this is an attempt to interpret his "explicit" version iteratively
-			#phase I
-			u = [0]*self.n
-			v = [0]*self.n
-			for i in range(self.n):
-				for j in range(self.n):
-					u[i]+=self.weights[i,j]*self.state_vector[j]
-
-				# u[i]/=j
-			for i in range(self.n):
-				self.state_vector[i]=np.sign(u[i])
-			# time_series.append(self.state_vector[:])
-			#phase II
+			# u = [0]*self.n
+			# v = [0]*self.n
 			# for i in range(self.n):
 			# 	for j in range(self.n):
-			# 		u[i]+=self.weights[i,j]*self.state_vector[j]
-				# u[i]/=j
-			for i in range(self.n):
-				for j in range(self.n):
+			# 		u[i]+=self.weights[i,j]*self.state_vector[j]					
 
-					v[i]+=self.weights[i,j]*self.phi(u[j])
+			# 	# u[i]/=j
+			# for i in range(self.n):
+			# 	self.state_vector[i]=np.sign(u[i])
 
-			print u
-			# print v
-			for i in range(self.n):
-				# print u[i]-lam*v[i]
-				# if(( (float(u[i])/v[i] ) >0 and (float(u[i])/v[i]) < lam)):
-				# 	# print "true"
-				# 	self.state_vector[i]=self.state_vector[i]*-1
-				# else:
-					# print "false"
-				print u[i]-lam*v[i]
-				self.state_vector[i]=np.sign(u[i]-lam*v[i])
-				# if(v[i]!=0 and float(u[i])/v[i]<lam and float(u[i])/v[i]>0):
-				# 	self.state_vector[i]*=-1
+			# for i in range(self.n):
+			# 	for j in range(self.n):
 
-			#Phase II:
+			# 		v[i]+=self.weights[i,j]*self.phi(u[j])
+
+			# for i in range(self.n):
+				
+			# 	# print u[i]-lam*v[i]
+			# 	self.state_vector[i]=np.sign(u[i]-lam*v[i])
+			# 	# if(v[i]!=0 and float(u[i])/v[i]<lam and float(u[i])/v[i]>0):
+			# 	# 	self.state_vector[i]*=-1
+
 			#this is an attempt to interpret his "abbreviated" version
 			# temp = np.array((self.mult_state(self.weights,(self.state_vector-[lam*i for i in [self.phi(i) for i in (self.mult_state(self.weights,self.state_vector))]]))))
 			# self.state_vector = np.array([np.sign(i) for i in temp])
-			# time_series.append(self.state_vector[:])
+			
+			a = self.mult_state(self.weights,self.state_vector)
+		 	b = [lam*self.phi(i) for i in a]
+		 	c = [i-j for i, j in zip(self.state_vector, b)]
+			d = self.mult_state(self.weights,c)
+			self.state_vector=[np.sign(i) for i in d]
 
 			time_series.append(self.state_vector[:])
 		return time_series
@@ -215,8 +187,9 @@ class Hopfield_Network(object):
 	def mult_state(self,weights,state):
 		tstate = [[i] for i in state]
 		# print np.shape(tstate)
-		return [i.tolist()[0][0] for i in weights*[[i] for i in state]]
+		return [i.tolist()[0][0] for i in weights*tstate]
 	def normalize_net(self):
-		for i in range(len(self.weights)):
-			for j in range(len(self.weights[i])):
-				self.weights[i,j]/=self.n
+		self.weights = np.divide(self.weights,float(self.n))
+		# for i in range(len(self.weights)):
+		# 	for j in range(len(self.weights[i])):
+		# 		self.weights[i,j]/=float(self.n)

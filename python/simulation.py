@@ -14,14 +14,14 @@ def main():
 	sims = 1
 	#general parameters
 	n=100
-	num_overlap_levels = 5
+	num_overlap_levels = 50
 
 	if(n<num_overlap_levels):
 		print "Be better."
 		exit()
 
 	num_trials=1
-	time_limit = 20
+	time_limit = 40
 	r = .025 #r is the ratio of memories to neurons m:n
 
 	synch=True #if false, use async update scheme.
@@ -68,7 +68,7 @@ def simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,part_reverse,tol
 	overlap level as dictated by its location in the o_levels list. Cool.
 	'''
 	
-	p_references = np.arange(n/2, n+1, n/num_overlap_levels) #just for keeping track of which indexes of o_levels are for which overlap percentages
+	p_references = np.arange(0, n/2, n/num_overlap_levels) #just for keeping track of which indexes of o_levels are for which overlap percentages
 	#o_levels is a list. Each index has a set of trials conducted for that initial overlap level, which is a "trials" list. Each trials list contains time-series lists
 	#containing integers corresponding to how many indexes of the memory are correct.
 	o_levels=[]
@@ -82,6 +82,7 @@ def simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,part_reverse,tol
 		memories.append(generate_memory(n))
 		net.store(memories[i])
 	print compare(memories[0],memories[1])
+
 	net.normalize_net()
 	#now, we run trials on this network.
 	tally_perfect=0
