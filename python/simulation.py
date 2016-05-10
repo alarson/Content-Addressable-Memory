@@ -11,57 +11,60 @@ import matplotlib.pyplot as plt
 
 def main():
 	#How many simulations (unique nets) should be run:
-	sims = 1
+	sims = 5
 	#general parameters
 	n=100
-	num_overlap_levels = 50
+	num_overlap_levels = 1
 
 	if(n<num_overlap_levels):
 		print "Be better."
 		exit()
 
-	num_trials=1
+	num_trials=10
 	time_limit = 40
 	r = .025 #r is the ratio of memories to neurons m:n
 
 	synch=True #if false, use async update scheme.
-	part_reverse=True;
+	part_reverse=False;
 	tolerance = 0.025 #ratio of bits that can be incorrect allowing the network to be considered correct
 	num_tol=int(tolerance*n)
 	print num_tol
 
-	for r in range(25,275,25):
-		r*=0.001
-		#Here we run the simulation sims times
-		tally=[]
-		tally,tally_total,tally_perfect,tally_25,tally_5 = (simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,part_reverse,num_tol))
-		tally_total=0
-		tally_perfect=0
-		for i in range(sims-1):
-			new,tot,perf,t25,t5 = (simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,part_reverse,num_tol))
+	for n in [100,500,1000]:
+		name = str(n)
+		for r in [150]:
+			r*=0.001
+			#Here we run the simulation sims times
+			tally=[]
+			tally,tally_total,tally_perfect,tally_25,tally_5 = (simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,part_reverse,num_tol,name))
+			tally_total=0
+			tally_perfect=0
+			for i in range(sims-1):
+				new,tot,perf,t25,t5 = (simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,part_reverse,num_tol,name))
 
-			tally_total+=tot
-			tally_perfect+=perf
-			tally_25+=t25
-			tally_5+=t5
-			#runs contains a tally, we update it using new
+				tally_total+=tot
+				tally_perfect+=perf
+				tally_25+=t25
+				tally_5+=t5
+				#runs contains a tally, we update it using new
 
-			for j in range(len(tally)):
-				tally[j]= [sum(x) for x in zip(tally[j], new[j])]
-			# print "run "+str(i+1)+" complete."
-		
-		#we normalize runs back down from tally to average
-		for i in range(len(tally)):
-			for j in range(len(tally[i])):
-				tally[i][j]= tally[i][j]/sims
+				for j in range(len(tally)):
+					tally[j]= [sum(x) for x in zip(tally[j], new[j])]
+				# print "run "+str(i+1)+" complete."
+			
+			#we normalize runs back down from tally to average
+			for i in range(len(tally)):
+				for j in range(len(tally[i])):
+					tally[i][j]= tally[i][j]/sims
 
-		print "r = "+str(r)+", total end states evaluated: "+str(tally_total)
-		print "total perfect end states:"+str(tally_perfect)+"\n"
-		print "total end states within 0.0025 error:"+str(tally_25)+"\n"
-		print "total end states within 0.05 error:"+str(tally_5)+"\n"
-		graph(tally,n,r)
+			print "n = "+str(n)
+			print "r = "+str(r)+", total end states evaluated: "+str(tally_total)
+			print "perfect end states:"+str(float(tally_perfect)/tally_total)+"\n"
+			print "end states within 0.0025 error:"+str(float(tally_25+tally_perfect)/tally_total)+"\n"
+			print "total end states within 0.05 error:"+str(tally_5)+"\n"
+			graph(tally,n,r,name)
 
-def simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,part_reverse,tolerance):
+def simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,part_reverse,tolerance,name):
 	'''
 	For one simulation, a single nxn network is generated. Each index of the o_levels list contains itself a list of length num_trials. Each index of this list contains a 
 	single "trial", which is a list corresponding to the overlap values over time when the network is exposed to a randomized permutation of the target memory, with the appropriate
@@ -81,7 +84,7 @@ def simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,part_reverse,tol
 	for i in range(m):
 		memories.append(generate_memory(n))
 		net.store(memories[i])
-	print compare(memories[0],memories[1])
+	# print compare(memories[0],memories[1])
 
 	net.normalize_net()
 	#now, we run trials on this network.
@@ -108,13 +111,14 @@ def simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,part_reverse,tol
 			for t in range(len(states)):
 				comparison = compare(states[t], mem)
 				overlaps.append(comparison)
-				if(n-comparison==0):
-					tally_perfect+=1
-				elif(n-comparison<tolerance):
-					t25+=1
-				elif(n-comparison<2*tolerance):
-					t5+=1
-				total+=1
+
+			if(n-comparison==0):
+				tally_perfect+=1
+			elif(n-comparison<tolerance):
+				t25+=1
+			elif(n-comparison<2*tolerance):
+				t5+=1
+			total+=1
 				
 			#store resulting overlap time-series
 			trials.append(overlaps[:])
@@ -127,25 +131,26 @@ def simulate(n,num_overlap_levels,num_trials,time_limit,r,synch,part_reverse,tol
 
 	return (o_levels,total,tally_perfect,t25,t5)
 
-def graph(series,n,param):
+def graph(series,n,param,name):
 	fig, ax = plt.subplots()
 	ax.margins(0.04)
 
 
 	for s in series:
 		wrongness=n-s[len(s)-1]
-		if(wrongness<float(n)/10):
+		if(wrongness<float(n)/20):
 			ax.plot(s,'.g-')
-		elif(wrongness>(float(n)/10)*9):
-			ax.plot(s,'.r-')
+		elif(wrongness>(float(n)/20)*9):
+			# ax.plot(s,'.r-')
+			ax.plot(s,'.y-')
 		else:
 			ax.plot(s,'.y-')
 	plt.ylabel('Overlap (p)')
 	plt.xlabel('Time (t)')
-	plt.title("Time courses for overlap")
+	plt.title("Time courses for overlap, "+name+" update scheme")
 	# plt.figure(facecolor="white")
 	fig1 = plt.gcf()
-	fig1.savefig('r_'+str(param)+'.png')
+	fig1.savefig('r_'+str(param)+name+'.png')
 	# plt.show()
 
 def compare(ar1,ar2):

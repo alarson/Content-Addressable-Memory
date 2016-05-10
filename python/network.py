@@ -129,7 +129,7 @@ class Hopfield_Network(object):
 		#arbitrary paremeters h and lam(bda) are described in the paper. When internet available, look up constants in py
 		# h = 1+2.0*math.sqrt(r)
 
-		h = 1.9
+		# h = 1.9
 		# print "h"+str(h)
 		lam = 2.7
 		self.state_vector = probe
